@@ -17,19 +17,18 @@ export async function createPaymentOrder(req: AuthRequest, res: Response) {
   try {
     const config = paymentConfig();
     const applicationId = String(req.body.applicationId || '').trim();
-    if (!applicationId) {
-      return res.status(400).json({ success: false, message: 'An application ID is required to create a payment order.' });
-    }
-    const application = await Application.findById(applicationId);
-    if (!application) return res.status(404).json({ success: false, message: 'Application not found.' });
-    if (req.user?.role !== 'administrator' && application.owner?.toString() !== req.user?.id) {
+    const amount = applicationId
+      ? Number((await Application.findById(applicationId))?.grandTotal)
+      : Number(req.body.amount);
+    const application = applicationId ? await Application.findById(applicationId) : null;
+    if (applicationId && !application) return res.status(404).json({ success: false, message: 'Application not found.' });
+    if (application && req.user?.role !== 'administrator' && application.owner?.toString() !== req.user?.id) {
       return res.status(403).json({ success: false, message: 'You are not authorized to pay for this application.' });
     }
-    const amount = Number(application.grandTotal ?? application.feeAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ success: false, message: 'The application does not have a valid payable amount.' });
     }
-    const receipt = application.appNo;
+    const receipt = String(req.body.receipt || application?.appNo || `LM-${Date.now()}`).slice(0, 40);
 
     const response = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -42,6 +41,13 @@ export async function createPaymentOrder(req: AuthRequest, res: Response) {
     const data = await response.json() as { id?: string; amount?: number; currency?: string; error?: { description?: string } };
     if (!response.ok || !data.id) {
       return res.status(502).json({ success: false, message: data.error?.description || 'Razorpay order creation failed.' });
+    }
+    if (req.user?.id) {
+      await Payment.findOneAndUpdate(
+        { orderId: data.id },
+        { orderId: data.id, paymentId: `pending-${data.id}`, application: application?._id, owner: req.user.id, amount: Number(data.amount) / 100, currency: data.currency || 'INR', status: 'created' },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
     }
     return res.status(201).json({ success: true, data: { orderId: data.id, amount: data.amount, currency: data.currency, keyId: config.razorpayKeyId } });
   } catch (error) {
@@ -67,31 +73,33 @@ export async function verifyPayment(req: AuthRequest, res: Response) {
     if (!orderResponse.ok || !order.amount || order.currency !== 'INR') {
       return res.status(400).json({ success: false, message: 'Unable to validate the Razorpay order.' });
     }
-    if (!applicationId) return res.status(400).json({ success: false, message: 'Application ID is required.' });
-    const application = await Application.findById(applicationId);
-    if (!application) return res.status(404).json({ success: false, message: 'Application not found.' });
-    if (req.user?.role !== 'administrator' && application.owner?.toString() !== req.user?.id) {
+    const application = applicationId ? await Application.findById(applicationId) : null;
+    if (application && req.user?.role !== 'administrator' && application.owner?.toString() !== req.user?.id) {
       return res.status(403).json({ success: false, message: 'You are not authorized to update this application.' });
     }
-    const expectedAmount = Number(application.grandTotal ?? application.feeAmount);
+    const pendingPayment = await Payment.findOne({ orderId: String(razorpay_order_id), owner: req.user?.id });
+    if (!pendingPayment) return res.status(403).json({ success: false, message: 'Payment order does not belong to the authenticated user.' });
+    const expectedAmount = application ? Number(application.grandTotal ?? application.feeAmount) : pendingPayment.amount;
     if (!Number.isFinite(expectedAmount) || Math.round(expectedAmount * 100) !== Number(order.amount)) {
       return res.status(400).json({ success: false, message: 'Payment amount does not match the application total.' });
     }
-    if (application.paymentStatus === 'Paid' || await Payment.exists({ $or: [{ paymentId: String(razorpay_payment_id) }, { orderId: String(razorpay_order_id) }] })) {
+    if (application?.paymentStatus === 'Paid' || await Payment.exists({ paymentId: String(razorpay_payment_id), status: 'verified' })) {
       return res.status(409).json({ success: false, message: 'This payment has already been processed.' });
     }
-    let ownerId = application.owner?.toString() || req.user?.id;
+    let ownerId = application?.owner?.toString() || pendingPayment.owner?.toString() || req.user?.id;
     if (!ownerId) return res.status(400).json({ success: false, message: 'Payment owner could not be resolved.' });
-    application.paymentStatus = 'Paid';
-    application.razorpayOrderId = String(razorpay_order_id);
-    application.razorpayPaymentId = String(razorpay_payment_id);
-    application.txnId = String(razorpay_payment_id);
-    application.paymentMethod = 'RAZORPAY';
-    if (!application.owner) application.owner = req.user?.id;
-    await application.save();
+    if (application) {
+      application.paymentStatus = 'Paid';
+      application.razorpayOrderId = String(razorpay_order_id);
+      application.razorpayPaymentId = String(razorpay_payment_id);
+      application.txnId = String(razorpay_payment_id);
+      application.paymentMethod = 'RAZORPAY';
+      if (!application.owner) application.owner = req.user?.id;
+      await application.save();
+    }
     await Payment.findOneAndUpdate(
-      { paymentId: String(razorpay_payment_id) },
-      { orderId: String(razorpay_order_id), paymentId: String(razorpay_payment_id), application: application._id, owner: ownerId, amount: Number(order.amount) / 100, currency: 'INR', status: 'verified' },
+      { orderId: String(razorpay_order_id) },
+      { orderId: String(razorpay_order_id), paymentId: String(razorpay_payment_id), application: application?._id, owner: ownerId, amount: Number(order.amount) / 100, currency: 'INR', status: 'verified' },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     return res.json({ success: true, message: 'Payment verified.', data: { paymentId: razorpay_payment_id, amount: Number(order.amount) / 100 } });

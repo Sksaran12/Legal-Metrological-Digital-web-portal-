@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/apiClient';
 import {
   X,
   ShieldCheck,
@@ -29,6 +30,13 @@ export interface RazorpayPaymentDetails {
   timestamp: string;
   bankName?: string;
   upiId?: string;
+  razorpaySignature?: string;
+}
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+  }
 }
 
 interface RazorpayPaymentModalProps {
@@ -138,7 +146,7 @@ export const RazorpayPaymentModal: React.FC<RazorpayPaymentModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setOrderId(allowDemoPayments ? `order_LMP_${Math.floor(100000 + Math.random() * 900000)}` : '');
+      setOrderId('');
       setPaymentStatus('idle');
       setTimeLeft(899);
     }
@@ -162,47 +170,58 @@ export const RazorpayPaymentModal: React.FC<RazorpayPaymentModalProps> = ({
 
   const formattedAmount = `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const executePayment = (method: string) => {
-    if (!allowDemoPayments) {
-      setProcessingMessage('Live Razorpay checkout is not configured for this environment.');
-      setPaymentStatus('idle');
-      return;
-    }
-
+  const executePayment = async (method: string) => {
     setPaymentStatus('processing');
-    setProcessingMessage('Contacting National Electronic Metrology Payment Gateway...');
+    setProcessingMessage('Opening secure Razorpay Checkout...');
+    try {
+      if (!window.Razorpay) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Razorpay Checkout could not load.'));
+          document.body.appendChild(script);
+        });
+      }
 
-    setTimeout(() => {
-      setProcessingMessage('Securing 3D-Secure 2.0 / UPI Two-Factor Authorization...');
-    }, 800);
-
-    setTimeout(() => {
-      setProcessingMessage(`Capturing ${formattedAmount} into Directorate Treasury Account...`);
-    }, 1600);
-
-    setTimeout(() => {
-      // Trigger authentic sound effect!
-      playPaymentSuccessSound();
-
-      setPaymentStatus('success');
-
-      const paymentId = `pay_Rzp${Math.floor(100000000 + Math.random() * 900000000)}`;
-      const paymentDetails: RazorpayPaymentDetails = {
-        razorpayPaymentId: paymentId,
-        razorpayOrderId: orderId,
-        paymentMethod: method,
-        paidAmount: amount,
-        paidFeeFormatted: formattedAmount,
-        timestamp: new Date().toISOString(),
-        bankName: method === 'netbanking' ? selectedBank : undefined,
-        upiId: method === 'upi' ? upiId : undefined
-      };
-
-      // Notify parent after brief celebratory screen
-      setTimeout(() => {
-        onSuccess(paymentDetails);
-      }, 1500);
-    }, 2400);
+      const order = await apiClient.createPaymentOrder(amount, docketId);
+      setOrderId(order.orderId);
+      if (!window.Razorpay) throw new Error('Razorpay Checkout is unavailable.');
+      const checkout = new window.Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.orderId,
+        name: 'Legal Metrology Verification',
+        description: `Verification and stamping fee for ${docketId}`,
+        prefill: { name: applicantName, email: applicantEmail, contact: applicantPhone },
+        theme: { color: '#0c2340' },
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+          setProcessingMessage('Verifying payment securely...');
+          await apiClient.verifyPayment({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature
+          });
+          playPaymentSuccessSound();
+          setPaymentStatus('success');
+          onSuccess({
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+            paymentMethod: method,
+            paidAmount: amount,
+            paidFeeFormatted: formattedAmount,
+            timestamp: new Date().toISOString()
+          });
+        },
+        modal: { ondismiss: () => setPaymentStatus('idle') }
+      });
+      checkout.open();
+    } catch (error) {
+      setPaymentStatus('idle');
+      setProcessingMessage(error instanceof Error ? error.message : 'Razorpay payment could not be started.');
+    }
   };
 
   return (

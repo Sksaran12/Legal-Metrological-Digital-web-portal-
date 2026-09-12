@@ -17,4 +17,4 @@ services:
       - key: CORS_ORIGIN
         sync: false
       - key: ALLOW_DEMO_PAYMENTS
-        value: "true"
+        value: "false"
