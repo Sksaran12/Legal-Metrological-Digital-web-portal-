@@ -17,7 +17,7 @@ function setAuthCookie(res: Response, token: string, maxAge: number) {
   const config = getAppConfig();
   res.setHeader(
     'Set-Cookie',
-    `everimet_auth=${encodeURIComponent(token)}; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=Strict${config.isProduction ? '; Secure' : ''}`
+    `everimet_auth=${encodeURIComponent(token)}; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=None${config.isProduction ? '; Secure' : ''}`
   );
 }
 
@@ -322,7 +322,7 @@ export function logout(_req: Request, res: Response) {
   const config = getAppConfig();
   res.setHeader(
     'Set-Cookie',
-    `everimet_auth=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict${config.isProduction ? '; Secure' : ''}`
+    `everimet_auth=; Max-Age=0; Path=/; HttpOnly; SameSite=None${config.isProduction ? '; Secure' : ''}`
   );
   return res.status(204).send();
 }

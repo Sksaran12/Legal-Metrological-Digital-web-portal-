@@ -2,7 +2,9 @@ import { LegalMetrologyCertificate } from './expiryEngine';
 import { ApplicationItem, LmoOfficer, OwnerRegistrationItem, InstrumentItem, AlertViolation, GatcCentre } from '../adminTypes';
 
 const rawApiBase = (import.meta as any).env?.VITE_API_BASE_URL;
-const API_BASE = rawApiBase ? rawApiBase.replace(/\/$/, '') : '/api';
+const API_BASE = rawApiBase
+  ? rawApiBase.replace(/\/$/, '')
+  : 'https://legal-metrology-system.onrender.com/api';
 
 const fetchWithCredentials = (input: RequestInfo | URL, init: RequestInit = {}) =>
   globalThis.fetch(input, { ...init, credentials: 'include' });

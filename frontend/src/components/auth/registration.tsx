@@ -248,7 +248,10 @@ export const Registration: React.FC<RegistrationProps> = ({
         });
       }
     } catch (err: any) {
-      showToast('Registration Exception', err?.message || 'Could not connect to backend server.', 'error');
+      const message = err instanceof TypeError && err.message === 'Failed to fetch'
+        ? 'Backend connection failed. Check the Render service URL, CORS_ORIGIN, and that the Render service is running.'
+        : err?.message || 'Could not connect to backend server.';
+      showToast('Registration Exception', message, 'error');
     }
   };
 
