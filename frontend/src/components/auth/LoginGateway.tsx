@@ -146,7 +146,7 @@ export const LoginGateway: React.FC<LoginGatewayProps> = ({
     try {
       const res = await apiClient.login({ email, password, role });
 
-      if (!res || res.success === false || !res.token || !res.userSession) {
+      if (!res || res.success === false || !res.userSession) {
         setAuthError({
           title: 'Authentication Verification Failed',
           message: res?.message || 'Invalid email or password provided.',

@@ -61,9 +61,12 @@ async function startServer() {
         .filter((origin): origin is string => Boolean(origin))
     : [];
   const publicAppOrigin = normalizeOrigin(config.publicAppUrl);
+  const knownVercelOrigin = normalizeOrigin(
+    "https://legal-metrological-digital-we-git-1a8f41-saran-mandals-projects.vercel.app"
+  );
 
   const allowedOrigins = config.isProduction
-    ? Array.from(new Set([...envOrigins, publicAppOrigin].filter((origin): origin is string => Boolean(origin))))
+    ? Array.from(new Set([...envOrigins, publicAppOrigin, knownVercelOrigin].filter((origin): origin is string => Boolean(origin))))
     : Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
   app.use(

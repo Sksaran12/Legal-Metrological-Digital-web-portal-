@@ -231,7 +231,7 @@ export const Registration: React.FC<RegistrationProps> = ({
       setIsRegistered(true);
       showToast(
         'Account Created & Persisted to Database',
-        `Welcome ${fullName}. Registered as ${selectedRole.toUpperCase()} under Legal Metrology Portal. JWT Token issued.`,
+        `Welcome ${fullName}. Registered as ${selectedRole.toUpperCase()} under Legal Metrology Portal. Secure session created.`,
         'success'
       );
 
