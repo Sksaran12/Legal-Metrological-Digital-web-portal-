@@ -210,6 +210,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     badgeNo: string;
     phone: string;
     email: string;
+    password: string;
     zoneCode: string;
     status: 'Available' | 'On Site' | 'Transit';
   }>({
@@ -217,24 +218,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     badgeNo: '',
     phone: '+91 98200 ',
     email: '',
+    password: '',
     zoneCode: 'Zone I - South Mumbai',
     status: 'Available'
   });
 
   const handleCreateInspector = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newInspectorData.name || !newInspectorData.badgeNo) {
-      showToast('Validation Error', 'Inspector Name and Statutory Badge Number are required.', 'error');
+    if (!newInspectorData.name || !newInspectorData.badgeNo || !newInspectorData.email || !newInspectorData.password) {
+      showToast('Validation Error', 'Name, badge number, official email, and temporary password are required.', 'error');
+      return;
+    }
+    if (newInspectorData.password.length < 12) {
+      showToast('Password Too Short', 'The officer login password must contain at least 12 characters.', 'error');
       return;
     }
 
     try {
-      const payload: LmoOfficer = {
+      const payload: LmoOfficer & { password: string } = {
         id: 'LMO-' + Date.now(),
         name: newInspectorData.name,
         badgeNo: newInspectorData.badgeNo,
         phone: newInspectorData.phone,
         email: newInspectorData.email,
+        password: newInspectorData.password,
         zoneCode: newInspectorData.zoneCode,
         zone: newInspectorData.zoneCode.split('-')[1]?.trim() || newInspectorData.zoneCode,
         status: newInspectorData.status,
@@ -264,6 +271,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         badgeNo: '',
         phone: '+91 98200 ',
         email: '',
+        password: '',
         zoneCode: 'Zone I - South Mumbai',
         status: 'Available'
       });
@@ -3430,14 +3438,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Official Email Address</label>
+                <label className="block font-bold text-gray-700 mb-1">Official Email Address *</label>
                 <input
                   type="email"
+                  required
                   value={newInspectorData.email}
                   onChange={(e) => setNewInspectorData({ ...newInspectorData, email: e.target.value })}
                   placeholder="inspector.name@legalmetrology.gov.in"
                   className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#16a34a]"
                 />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Temporary Login Password *</label>
+                <input
+                  type="password"
+                  required
+                  minLength={12}
+                  value={newInspectorData.password}
+                  onChange={(e) => setNewInspectorData({ ...newInspectorData, password: e.target.value })}
+                  placeholder="At least 12 characters"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#16a34a]"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">Give this temporary password securely to the officer. It is never displayed after saving.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

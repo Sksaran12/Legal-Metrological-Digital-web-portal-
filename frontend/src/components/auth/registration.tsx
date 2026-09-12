@@ -194,8 +194,8 @@ export const Registration: React.FC<RegistrationProps> = ({
       return;
     }
 
-    if (!password || password.length < 6) {
-      showToast('Password Short', 'Password must be at least 6 characters in length.', 'warning');
+    if (!password || password.length < 8) {
+      showToast('Password Short', 'Password must be at least 8 characters in length.', 'warning');
       return;
     }
 
@@ -441,41 +441,9 @@ export const Registration: React.FC<RegistrationProps> = ({
                         )}
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleRoleSelect('administrator')}
-                        className={`w-full px-4 py-2 text-left text-xs flex items-center justify-between hover:bg-[#eef8f1] hover:text-[#16a34a] transition-colors cursor-pointer ${
-                          selectedRole === 'administrator'
-                            ? 'bg-[#eef8f1] text-[#15803d] font-bold'
-                            : 'text-[#0c2340]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <ShieldCheck className="w-4 h-4 text-[#16a34a]" />
-                          <span>2. Administrator</span>
-                        </div>
-                        {selectedRole === 'administrator' && (
-                          <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleRoleSelect('officer')}
-                        className={`w-full px-4 py-2 text-left text-xs flex items-center justify-between hover:bg-[#eef8f1] hover:text-[#16a34a] transition-colors cursor-pointer ${
-                          selectedRole === 'officer'
-                            ? 'bg-[#eef8f1] text-[#15803d] font-bold'
-                            : 'text-[#0c2340]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <UserCheck className="w-4 h-4 text-[#16a34a]" />
-                          <span>3. Officer</span>
-                        </div>
-                        {selectedRole === 'officer' && (
-                          <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
-                        )}
-                      </button>
+                      <div className="px-4 py-2 text-[11px] text-gray-500 border-t border-gray-100">
+                        Administrator and LMO accounts are provisioned by an administrator from the secure command center.
+                      </div>
                     </div>
                   )}
                 </div>

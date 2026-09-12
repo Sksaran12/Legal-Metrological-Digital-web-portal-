@@ -14,7 +14,9 @@ router.post(
   authorizeRoles('administrator'),
   [
     body('name').trim().notEmpty().withMessage('Officer name is required.'),
-    body('badgeNo').trim().notEmpty().withMessage('Badge number is required.')
+  body('badgeNo').trim().notEmpty().withMessage('Badge number is required.'),
+  body('email').trim().isEmail().withMessage('A valid officer email is required.').normalizeEmail(),
+  body('password').isString().isLength({ min: 12 }).withMessage('Officer password must be at least 12 characters long.')
   ],
   handleValidationErrors,
   createOfficer

@@ -33,7 +33,12 @@ async function readApiResponse<T = any>(response: Response): Promise<T> {
   }
 
   if (!response.ok) {
-    const message = (data as { message?: string })?.message;
+    const apiData = data as { message?: string; errors?: Array<{ field?: string; message?: string }> };
+    const validationMessage = apiData.errors
+      ?.map((error) => error.message)
+      .filter(Boolean)
+      .join(' ');
+    const message = validationMessage || apiData.message;
     throw new Error(message || `Backend request failed with HTTP ${response.status}.`);
   }
   return data;
@@ -283,7 +288,7 @@ export const apiClient = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(officerData)
     });
-    return res.json();
+    return readApiResponse(res);
   },
 
   // Instruments API

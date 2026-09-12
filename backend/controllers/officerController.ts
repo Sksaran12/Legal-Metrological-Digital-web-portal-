@@ -25,6 +25,13 @@ export async function getAllOfficers(req: Request, res: Response) {
 export async function createOfficer(req: Request, res: Response) {
   try {
     const data = req.body;
+    const cleanEmail = String(data.email || '').toLowerCase().trim();
+    if (!cleanEmail || typeof data.password !== 'string' || data.password.length < 12) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid officer email and a password of at least 12 characters are required.'
+      });
+    }
     if (!data.badgeNo) {
       data.badgeNo = secureReference('MH-LM');
     }
@@ -34,37 +41,38 @@ export async function createOfficer(req: Request, res: Response) {
       return res.status(400).json({ success: false, message: 'Badge number already exists.' });
     }
 
-    const officer = new LmoOfficerModel(data);
+    // Bi-directional sync: ensure corresponding User document is created for Auth / Login
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser && !['officer', 'lmo'].includes(existingUser.role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'This email is already registered to a non-officer account.'
+      });
+    }
+
+    const officer = new LmoOfficerModel({ ...data, email: cleanEmail });
     await officer.save();
 
-    // Bi-directional sync: ensure corresponding User document is created for Auth / Login
-    if (data.email) {
-      const cleanEmail = data.email.toLowerCase().trim();
-      const existingUser = await User.findOne({ email: cleanEmail });
-      if (!existingUser) {
-        if (typeof data.password !== 'string' || data.password.length < 12) {
-          return res.status(400).json({
-            success: false,
-            message: 'A temporary officer password of at least 12 characters is required.'
-          });
-        }
-        const defaultPassword = data.password;
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(defaultPassword, salt);
-
-        await User.create({
-          name: officer.name,
-          email: cleanEmail,
-          password: hashedPassword,
-          role: 'officer',
-          identifier: officer.badgeNo,
-          roleLabel: 'Legal Metrology Officer',
-          phone: officer.phone,
-          zone: officer.zone || officer.zoneCode,
-          status: 'active'
-        });
+    if (!existingUser) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(data.password, salt);
+      await User.create({
+        name: officer.name,
+        email: cleanEmail,
+        password: hashedPassword,
+        role: 'officer',
+        identifier: officer.badgeNo,
+        roleLabel: 'Legal Metrology Officer',
+        phone: officer.phone,
+        zone: officer.zone || officer.zoneCode,
+        status: 'active'
+      });
+    } else if (existingUser.identifier !== officer.badgeNo) {
+      existingUser.identifier = officer.badgeNo;
+      existingUser.role = 'officer';
+      existingUser.status = 'active';
+      await existingUser.save();
       }
-    }
 
     return res.status(201).json({ success: true, message: 'Officer added to roster and authentication account created.', data: officer });
   } catch (error: any) {
