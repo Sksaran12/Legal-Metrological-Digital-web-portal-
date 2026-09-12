@@ -738,6 +738,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       const certPayload: any = {
         certificateId: certId,
+        applicationRef: targetAppId,
         certificateNo: certId,
         instrumentId: app.equipmentSerial || app.appNo,
         owner: app.enterpriseName,
@@ -772,7 +773,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       };
 
       // 1. Create in MongoDB Atlas
-      await apiClient.createCertificate(certPayload);
+      const certificateResponse = await apiClient.createCertificate(certPayload);
+      const persistedCertificate = certificateResponse.data || certPayload;
 
       // 2. Update Application Status to 'stamped'
       await apiClient.updateApplication(targetAppId, {
@@ -802,7 +804,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         })
       );
 
-      setCertificates((prev) => [certPayload, ...prev]);
+      setCertificates((prev) => [{ ...certPayload, ...persistedCertificate }, ...prev]);
 
       showToast(
         isFastStamp ? 'Instant Certificate Stamped' : 'Statutory Certificate Generated',
@@ -813,7 +815,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setVerificationModalApp(null);
 
       // 4. Trigger View Certificate
-      handleViewCertificate(certPayload);
+      handleViewCertificate({ ...certPayload, ...persistedCertificate });
     } catch (err: any) {
       showToast('Certificate Issuance Error', err?.message || 'Failed to issue certificate.', 'error');
     } finally {

@@ -436,7 +436,7 @@ export default function App() {
           showToast={showToast}
           onOpenReportModal={handleOpenReport}
           onPrintCertificate={handleOpenCertificate}
-          initialCertId={publicCertId || urlParams?.get('cert') || 'LM-CERT-2026-0001'}
+          initialCertId={publicCertId || urlParams?.get('cert') || ''}
           onNavigateHome={() => {
             if (isAuthenticated) {
               const role = userSession.role;

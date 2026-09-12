@@ -380,6 +380,8 @@ export async function createCertificate(req: AuthRequest, res: Response) {
     data.applicationRef = application._id;
     data.ownerRef = application.owner;
     data.lmoRef = req.user?.id;
+    data.qrPayload = `${getAppConfig().publicAppUrl}/verify/${encodeURIComponent(String(data.certificateId))}`;
+    data.pdfUrl = `${getAppConfig().publicAppUrl}/api/certificates/pdf/${encodeURIComponent(String(data.certificateId))}.pdf`;
 
     const { signCertificate } = await import('../utils/certificateSigning');
     const signature = signCertificate(data);

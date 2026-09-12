@@ -316,28 +316,9 @@ export const PublicQRVerification: React.FC<PublicQRVerificationProps> = ({
                   </span>
                 </div>
 
-                {/* Quick Scan Selection buttons */}
-                <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-xs">
-                  <span className="text-slate-400">Sample QR Plates:</span>
-                  <button
-                    onClick={() => handleTriggerScan('LM-CERT-2026-0001')}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-mono text-xs cursor-pointer"
-                  >
-                    Scan Scale (LM-CERT-2026-0001)
-                  </button>
-                  <button
-                    onClick={() => handleTriggerScan('LM-CERT-2025-0042')}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-mono text-xs cursor-pointer"
-                  >
-                    Scan Standard Weights (24m)
-                  </button>
-                  <button
-                    onClick={() => handleTriggerScan('LM-CERT-2023-9999')}
-                    className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-mono text-xs cursor-pointer"
-                  >
-                    Scan Expired Scale (Fail)
-                  </button>
-                </div>
+                <p className="pt-2 text-center text-[11px] text-slate-400">
+                  Use your handset camera or scan the QR seal printed on an issued certificate.
+                </p>
               </div>
             )}
 
@@ -378,50 +359,9 @@ export const PublicQRVerification: React.FC<PublicQRVerificationProps> = ({
               </div>
             </form>
 
-            {/* Preset Quick Test Pills */}
-            <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-xs">
-              <span className="text-gray-500 text-[11px] font-semibold">Pre-loaded statutory records:</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setCertInput('LM-CERT-2026-0001');
-                  handleVerify('LM-CERT-2026-0001');
-                }}
-                className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono text-[11px] hover:bg-emerald-100 cursor-pointer font-bold"
-              >
-                LM-CERT-2026-0001 (Scale)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCertInput('LM-CERT-2025-0042');
-                  handleVerify('LM-CERT-2025-0042');
-                }}
-                className="px-2.5 py-1 rounded bg-blue-50 text-blue-800 border border-blue-200 font-mono text-[11px] hover:bg-blue-100 cursor-pointer font-bold"
-              >
-                LM-CERT-2025-0042 (24m Weights)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCertInput('LM-CERT-2024-0019');
-                  handleVerify('LM-CERT-2024-0019');
-                }}
-                className="px-2.5 py-1 rounded bg-purple-50 text-purple-800 border border-purple-200 font-mono text-[11px] hover:bg-purple-100 cursor-pointer font-bold"
-              >
-                LM-CERT-2024-0019 (60m Tank)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCertInput('LM-CERT-2023-9999');
-                  handleVerify('LM-CERT-2023-9999');
-                }}
-                className="px-2.5 py-1 rounded bg-rose-50 text-rose-800 border border-rose-200 font-mono text-[11px] hover:bg-rose-100 cursor-pointer font-bold"
-              >
-                LM-CERT-2023-9999 (Expired)
-              </button>
-            </div>
+            <p className="pt-2 text-center text-[11px] text-gray-500">
+              Only certificate IDs and serial numbers stored in the official registry can be verified.
+            </p>
           </div>
         </div>
       )}

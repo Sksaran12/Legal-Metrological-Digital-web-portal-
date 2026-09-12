@@ -186,7 +186,7 @@ export const apiClient = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(cert)
     });
-    return res.json();
+    return readApiResponse(res);
   },
 
   async createCertificate(cert: Partial<LegalMetrologyCertificate> & { applicationRef?: string }) {
