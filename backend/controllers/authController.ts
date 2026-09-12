@@ -98,6 +98,18 @@ export async function register(req: Request, res: Response) {
         ? secureReference('MH-LM')
         : email;
 
+    const activeAdministratorCount = role === 'administrator'
+      ? await User.countDocuments({ role: 'administrator', status: 'active' })
+      : 0;
+    const accountStatus =
+      role === 'officer'
+        ? 'pending'
+        : role === 'administrator' && activeAdministratorCount === 0
+        ? 'active'
+        : role === 'administrator'
+        ? 'pending'
+        : 'active';
+
     const newUser = new User({
       name,
       email: email.toLowerCase(),
@@ -111,7 +123,7 @@ export async function register(req: Request, res: Response) {
       gstin,
       licenseNo,
       zone,
-      status: role === 'administrator' || role === 'officer' ? 'pending' : 'active'
+      status: accountStatus
     });
 
     await newUser.save();
@@ -242,6 +254,14 @@ export async function login(req: Request, res: Response) {
     if (user.role === 'administrator' && !user.status) {
       user.status = 'active';
       await user.save();
+    }
+
+    if (user.status === 'pending') {
+      return res.status(403).json({
+        success: false,
+        pendingApproval: true,
+        message: 'This account is awaiting administrator verification and activation.'
+      });
     }
 
     if (user.status !== 'active' || !user.password) {

@@ -148,9 +148,11 @@ export const LoginGateway: React.FC<LoginGatewayProps> = ({
 
       if (!res || res.success === false || !res.userSession) {
         setAuthError({
-          title: 'Authentication Verification Failed',
+          title: res?.pendingApproval ? 'Account Awaiting Approval' : 'Authentication Verification Failed',
           message: res?.message || 'Invalid email or password provided.',
-          hint: 'The credentials entered do not match any verified record in the National Metrology Database. Verify your selected role and password caps lock, or use one of the quick test accounts.'
+          hint: res?.pendingApproval
+            ? 'An active administrator must verify this account before it can access the administrator or officer dashboard.'
+            : 'The credentials entered do not match any verified record in the National Metrology Database. Verify your selected role and password.'
         });
         showToast('Authentication Error', res?.message || 'Invalid email or password.', 'error');
         setIsAuthenticating(false);

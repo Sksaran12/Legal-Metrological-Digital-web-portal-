@@ -124,7 +124,7 @@ export const AuthErrorModal: React.FC<AuthErrorModalProps> = ({
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Quick-Load Authorized Test Profiles</span>
               </span>
-              <span className="text-[10px] text-gray-400 font-mono">Password123!</span>
+              <span className="text-[10px] text-gray-400 font-mono">Configured seed password</span>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
