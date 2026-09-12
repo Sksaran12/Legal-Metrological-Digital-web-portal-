@@ -4,7 +4,7 @@ import { ApplicationItem, LmoOfficer, OwnerRegistrationItem, InstrumentItem, Ale
 const rawApiBase = (import.meta as any).env?.VITE_API_BASE_URL;
 const API_BASE = rawApiBase
   ? rawApiBase.replace(/\/$/, '')
-  : 'https://legal-metrology-system.onrender.com/api';
+  : 'https://legal-metrological-digital-web-portal.onrender.com/api';
 
 const fetchWithCredentials = (input: RequestInfo | URL, init: RequestInit = {}) =>
   globalThis.fetch(input, { ...init, credentials: 'include' });
@@ -12,6 +12,31 @@ const fetch = fetchWithCredentials;
 
 function withCredentials(init: RequestInit = {}): RequestInit {
   return { ...init, credentials: 'include' };
+}
+
+async function readApiResponse<T = any>(response: Response): Promise<T> {
+  const text = await response.text();
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!text.trim()) {
+    throw new Error(`Backend returned an empty response (HTTP ${response.status}).`);
+  }
+  if (!contentType.includes('application/json')) {
+    throw new Error(`Backend returned a non-JSON response (HTTP ${response.status}).`);
+  }
+
+  let data: T;
+  try {
+    data = JSON.parse(text) as T;
+  } catch {
+    throw new Error(`Backend returned invalid JSON (HTTP ${response.status}).`);
+  }
+
+  if (!response.ok) {
+    const message = (data as { message?: string })?.message;
+    throw new Error(message || `Backend request failed with HTTP ${response.status}.`);
+  }
+  return data;
 }
 
 function getAuthHeader(): Record<string, string> {
@@ -27,7 +52,7 @@ export const apiClient = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials)
     }));
-    const data = await res.json();
+    const data = await readApiResponse(res);
     if (data.token) {
     }
     if (data.userSession) {
@@ -43,7 +68,7 @@ export const apiClient = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(registrationData)
     }));
-    const data = await res.json();
+    const data = await readApiResponse(res);
     if (data.token) {
     }
     if (data.userSession) {
@@ -57,7 +82,7 @@ export const apiClient = {
     const res = await fetchWithCredentials(`${API_BASE}/auth/me`, withCredentials({
       headers: { ...getAuthHeader() }
     }));
-    return res.json();
+    return readApiResponse(res);
   },
 
   async logout() {
