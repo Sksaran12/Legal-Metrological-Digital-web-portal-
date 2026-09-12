@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: legal-metrology-system
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: ALLOW_DEMO_PAYMENTS
+        value: "true"

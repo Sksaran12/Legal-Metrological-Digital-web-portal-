@@ -1,0 +1,6 @@
+{
+  "name": "e-VeriMet",
+  "description": "e-VeriMet - Official National Legal Metrology Verification & Certification Portal for Weights & Measures Compliance.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
