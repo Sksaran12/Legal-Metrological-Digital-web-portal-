@@ -145,7 +145,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }));
         }
 
-        const [appsRes, officersRes, gatcRes, certsRes, alertsRes, stakeholdersRes] = await Promise.all([
+        const results = await Promise.allSettled([
           apiClient.getApplications(),
           apiClient.getOfficers(),
           apiClient.getGatcCentres(),
@@ -154,23 +154,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           apiClient.getStakeholders()
         ]);
 
-        if (Array.isArray(appsRes)) {
-          setApplications(appsRes);
+        const [appsRes, officersRes, gatcRes, certsRes, alertsRes, stakeholdersRes] = results;
+        if (appsRes.status === 'fulfilled' && Array.isArray(appsRes.value)) {
+          setApplications(appsRes.value);
         }
-        if (Array.isArray(officersRes)) {
-          setOfficers(officersRes);
+        if (officersRes.status === 'fulfilled' && Array.isArray(officersRes.value)) {
+          setOfficers(officersRes.value);
         }
-        if (Array.isArray(gatcRes)) {
-          setGatcCentres(gatcRes);
+        if (gatcRes.status === 'fulfilled' && Array.isArray(gatcRes.value)) {
+          setGatcCentres(gatcRes.value);
         }
-        if (Array.isArray(certsRes)) {
-          setCertificates(certsRes as any);
+        if (certsRes.status === 'fulfilled' && Array.isArray(certsRes.value)) {
+          setCertificates(certsRes.value as any);
         }
-        if (Array.isArray(alertsRes)) {
-          setAlerts(alertsRes);
+        if (alertsRes.status === 'fulfilled' && Array.isArray(alertsRes.value)) {
+          setAlerts(alertsRes.value);
         }
-        if (Array.isArray(stakeholdersRes)) {
-          setOwnerRegistrations(stakeholdersRes);
+        if (stakeholdersRes.status === 'fulfilled' && Array.isArray(stakeholdersRes.value)) {
+          setOwnerRegistrations(stakeholdersRes.value);
         }
       } catch (err) {
         console.warn('Admin live data load fallback:', err);

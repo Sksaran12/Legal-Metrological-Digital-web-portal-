@@ -13,6 +13,7 @@ import { signCertificate } from '../utils/certificateSigning';
 import { secureReference, secureId } from '../utils/identifiers';
 import { getAppConfig } from '../config/env';
 import { Payment } from '../models/Payment';
+import { LmoOfficerModel } from '../models/LmoOfficer';
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -454,20 +455,47 @@ export async function assignOfficer(req: AuthRequest, res: Response) {
     }
 
     if (assignedLmoUser) {
-      app.assignedLmoUser = assignedLmoUser;
-      if (!assignedLmo) {
-        const u = await User.findById(assignedLmoUser);
-        if (u) {
-          app.assignedLmo = {
-            id: u._id.toString(),
-            name: u.name,
-            badgeNo: u.identifier || 'MH-LM-2041',
-            avatar: '',
-            zone: u.zone || 'Zone II (Mumbai Central)',
-            phone: u.phone || '',
-            email: u.email
-          };
+      let officerUser = mongoose.Types.ObjectId.isValid(assignedLmoUser)
+        ? await User.findById(assignedLmoUser)
+        : null;
+
+      // The admin roster uses LmoOfficer documents, while application ownership
+      // and officer access use the linked User document.
+      if (!officerUser) {
+        const rosterOfficer = await LmoOfficerModel.findOne({
+          $or: [
+            ...(mongoose.Types.ObjectId.isValid(assignedLmoUser) ? [{ _id: assignedLmoUser }] : []),
+            { badgeNo: assignedLmoUser }
+          ]
+        });
+        if (rosterOfficer?.email) {
+          officerUser = await User.findOne({
+            $or: [
+              { email: rosterOfficer.email.toLowerCase() },
+              { identifier: rosterOfficer.badgeNo }
+            ]
+          });
         }
+      }
+
+      if (!officerUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'The selected LMO officer does not have a linked authentication account.'
+        });
+      }
+
+      app.assignedLmoUser = officerUser._id;
+      if (!assignedLmo) {
+        app.assignedLmo = {
+          id: officerUser._id.toString(),
+          name: officerUser.name,
+          badgeNo: officerUser.identifier || 'MH-LM-2041',
+          avatar: '',
+          zone: officerUser.zone || 'Zone II (Mumbai Central)',
+          phone: officerUser.phone || '',
+          email: officerUser.email
+        };
       }
     }
     if (assignedLmo) {
@@ -480,7 +508,7 @@ export async function assignOfficer(req: AuthRequest, res: Response) {
             { name: assignedLmo.name }
           ]
         });
-        if (u) {
+        if (u && ['officer', 'lmo'].includes(u.role)) {
           app.assignedLmoUser = u._id;
         }
       }
