@@ -98,18 +98,6 @@ export async function register(req: Request, res: Response) {
         ? secureReference('MH-LM')
         : email;
 
-    const activeAdministratorCount = role === 'administrator'
-      ? await User.countDocuments({ role: 'administrator', status: 'active' })
-      : 0;
-    const accountStatus =
-      role === 'officer'
-        ? 'pending'
-        : role === 'administrator' && activeAdministratorCount === 0
-        ? 'active'
-        : role === 'administrator'
-        ? 'pending'
-        : 'active';
-
     const newUser = new User({
       name,
       email: email.toLowerCase(),
@@ -123,7 +111,7 @@ export async function register(req: Request, res: Response) {
       gstin,
       licenseNo,
       zone,
-      status: accountStatus
+      status: 'active'
     });
 
     await newUser.save();
@@ -189,14 +177,6 @@ export async function register(req: Request, res: Response) {
       }
     }
 
-    if (newUser.status !== 'active') {
-      return res.status(201).json({
-        success: true,
-        pendingApproval: true,
-        message: 'Registration received. An administrator must verify and activate this account before login.'
-      });
-    }
-
     const token = jwt.sign(
       {
         id: newUser._id.toString(),
@@ -256,12 +236,9 @@ export async function login(req: Request, res: Response) {
       await user.save();
     }
 
-    if (user.status === 'pending') {
-      return res.status(403).json({
-        success: false,
-        pendingApproval: true,
-        message: 'This account is awaiting administrator verification and activation.'
-      });
+    if ((user.role === 'administrator' || user.role === 'officer' || user.role === 'lmo') && user.status === 'pending') {
+      user.status = 'active';
+      await user.save();
     }
 
     if (user.status !== 'active' || !user.password) {

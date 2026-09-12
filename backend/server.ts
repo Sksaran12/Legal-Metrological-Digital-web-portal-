@@ -159,14 +159,31 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = fs.existsSync(path.join(process.cwd(), "dist", "index.html"))
-      ? path.join(process.cwd(), "dist")
-      : path.resolve(__dirname);
+    const distPath = path.join(process.cwd(), "dist");
+    const frontendIndex = path.join(distPath, "index.html");
 
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
+    // Render builds the backend separately from Vercel, so its dist folder
+    // normally contains server.cjs but not the frontend index.html.
+    if (fs.existsSync(frontendIndex)) {
+      app.use(express.static(distPath));
+      app.get("*", (req, res) => {
+        res.sendFile(frontendIndex);
+      });
+    } else {
+      app.get("/", (_req, res) => {
+        res.status(200).json({
+          service: "legal-metrology-api",
+          status: "ok",
+          message: "Backend API is running. Use /api/health for service health."
+        });
+      });
+      app.use((_req, res) => {
+        res.status(404).json({
+          success: false,
+          message: "Route not found. Use the /api endpoints."
+        });
+      });
+    }
   }
 
   const isProduction = process.env.NODE_ENV === "production";

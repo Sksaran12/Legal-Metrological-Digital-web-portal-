@@ -460,7 +460,7 @@ export const Registration: React.FC<RegistrationProps> = ({
                       >
                         <div className="flex items-center gap-2.5">
                           <ShieldCheck className="w-4 h-4 text-[#16a34a]" />
-                          <span>2. Administrator (Approval Required)</span>
+                          <span>2. Administrator</span>
                         </div>
                         {selectedRole === 'administrator' && <span className="w-2 h-2 rounded-full bg-[#16a34a]" />}
                       </button>
@@ -474,14 +474,11 @@ export const Registration: React.FC<RegistrationProps> = ({
                       >
                         <div className="flex items-center gap-2.5">
                           <UserCheck className="w-4 h-4 text-[#16a34a]" />
-                          <span>3. Officer / LMO (Approval Required)</span>
+                          <span>3. Officer / LMO</span>
                         </div>
                         {selectedRole === 'officer' && <span className="w-2 h-2 rounded-full bg-[#16a34a]" />}
                       </button>
 
-                      <div className="px-4 py-2 text-[11px] text-amber-700 bg-amber-50 border-t border-amber-100">
-                        Administrator and LMO registrations remain pending until verified and activated by an existing administrator.
-                      </div>
                     </div>
                   )}
                 </div>
