@@ -78,6 +78,16 @@ export async function seedDatabase() {
         phone: '+91 98202 77889'
       });
       console.log('🌱 Seeded Admin user account.');
+    } else {
+      const adminUpdates: Partial<typeof adminUser> = {};
+      if (adminUser.role !== 'administrator') adminUpdates.role = 'administrator';
+      if (adminUser.status !== 'active') adminUpdates.status = 'active';
+      if (adminUser.roleLabel !== 'System Administrator') adminUpdates.roleLabel = 'System Administrator';
+      if (!adminUser.identifier) adminUpdates.identifier = adminUser.email;
+      if (Object.keys(adminUpdates).length > 0) {
+        await User.updateOne({ _id: adminUser._id }, { $set: adminUpdates });
+        adminUser = await User.findById(adminUser._id);
+      }
     }
 
     if (!gatcUser) {

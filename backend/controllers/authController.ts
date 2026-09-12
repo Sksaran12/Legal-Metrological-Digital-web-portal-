@@ -226,6 +226,13 @@ export async function login(req: Request, res: Response) {
       });
     }
 
+    // Older administrator records may predate the status field. Normalize
+    // those records instead of locking the administrator out of the portal.
+    if (user.role === 'administrator' && !user.status) {
+      user.status = 'active';
+      await user.save();
+    }
+
     if (user.status !== 'active' || !user.password) {
       return res.status(401).json({
         success: false,
