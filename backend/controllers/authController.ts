@@ -39,7 +39,9 @@ export async function register(req: Request, res: Response) {
       'dealer',
       'repairer',
       'importer',
-      'citizen'
+      'citizen',
+      'administrator',
+      'officer'
     ];
     if (!selfRegisterableRoles.includes(role as UserRole)) {
       return res.status(403).json({
@@ -108,7 +110,8 @@ export async function register(req: Request, res: Response) {
       enterpriseType,
       gstin,
       licenseNo,
-      zone
+      zone,
+      status: role === 'administrator' || role === 'officer' ? 'pending' : 'active'
     });
 
     await newUser.save();
@@ -172,6 +175,14 @@ export async function register(req: Request, res: Response) {
       } catch (stkErr) {
         console.error('Error syncing stakeholder record on registration:', stkErr);
       }
+    }
+
+    if (newUser.status !== 'active') {
+      return res.status(201).json({
+        success: true,
+        pendingApproval: true,
+        message: 'Registration received. An administrator must verify and activate this account before login.'
+      });
     }
 
     const token = jwt.sign(

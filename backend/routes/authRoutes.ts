@@ -16,8 +16,8 @@ router.post(
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.'),
     body('role')
       .optional()
-      .isIn(['owner', 'business', 'manufacturer', 'dealer', 'repairer', 'importer', 'citizen'])
-      .withMessage('This role cannot be self-registered.')
+      .isIn(['owner', 'business', 'manufacturer', 'dealer', 'repairer', 'importer', 'citizen', 'administrator', 'officer'])
+      .withMessage('Unsupported registration role.')
   ],
   handleValidationErrors,
   register
