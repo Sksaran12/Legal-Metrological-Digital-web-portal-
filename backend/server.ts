@@ -64,9 +64,15 @@ async function startServer() {
   const knownVercelOrigin = normalizeOrigin(
     "https://legal-metrological-digital-we-git-1a8f41-saran-mandals-projects.vercel.app"
   );
+  const deployedVercelOrigin = normalizeOrigin("https://web-port.vercel.app");
 
   const allowedOrigins = config.isProduction
-    ? Array.from(new Set([...envOrigins, publicAppOrigin, knownVercelOrigin].filter((origin): origin is string => Boolean(origin))))
+    ? Array.from(new Set([
+        ...envOrigins,
+        publicAppOrigin,
+        knownVercelOrigin,
+        deployedVercelOrigin
+      ].filter((origin): origin is string => Boolean(origin))))
     : Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
   app.use(
