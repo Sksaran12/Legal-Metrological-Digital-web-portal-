@@ -3,7 +3,7 @@ services:
     name: legal-metrology-system
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build:backend
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -18,3 +18,11 @@ services:
         sync: false
       - key: ALLOW_DEMO_PAYMENTS
         value: "false"
+      - key: DEMO_PAYMENT_CONFIRMATION
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
