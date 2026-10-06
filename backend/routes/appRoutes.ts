@@ -20,7 +20,7 @@ router.get('/:id', authenticateJWT, getApplicationById);
 router.post(
   '/',
   authenticateJWT,
-  authorizeRoles('owner', 'business', 'administrator'),
+  authorizeRoles('owner', 'business', 'manufacturer', 'dealer', 'repairer', 'importer', 'administrator'),
   [
     body('enterpriseName').trim().notEmpty().withMessage('Enterprise name is required.'),
     body('equipmentName').trim().notEmpty().withMessage('Equipment name is required.')

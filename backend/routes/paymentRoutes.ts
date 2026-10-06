@@ -5,15 +5,15 @@ import { createPaymentOrder, handlePaymentWebhook, verifyPayment } from '../cont
 import { handleValidationErrors } from '../middleware/validate';
 
 const router = Router();
-router.post('/orders', authenticateJWT, authorizeRoles('owner', 'business', 'administrator'), [
+router.post('/orders', authenticateJWT, authorizeRoles('owner', 'business', 'manufacturer', 'dealer', 'repairer', 'importer', 'administrator'), [
   body('applicationId').optional().isMongoId(),
   body('amount').optional().isFloat({ gt: 0 }),
   body('receipt').optional().trim().isLength({ min: 1, max: 40 })
 ], handleValidationErrors, createPaymentOrder);
-router.post('/verify', authenticateJWT, authorizeRoles('owner', 'business', 'administrator'), [
+router.post('/verify', authenticateJWT, authorizeRoles('owner', 'business', 'manufacturer', 'dealer', 'repairer', 'importer', 'administrator'), [
   body('razorpay_order_id').trim().notEmpty(),
   body('razorpay_payment_id').trim().notEmpty(),
-  body('razorpay_signature').trim().isLength({ min: 64, max: 64 }),
+  body('razorpay_signature').trim().isLength({ min: 1, max: 128 }),
   body('applicationId').optional().isMongoId()
 ], handleValidationErrors, verifyPayment);
 router.post('/webhook', handlePaymentWebhook);

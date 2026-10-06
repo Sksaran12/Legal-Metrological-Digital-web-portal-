@@ -513,7 +513,11 @@ export default function App() {
   }
 
   // IF AUTHENTICATED AS OWNER: Display the dedicated Owner Page with the same design as the Login page
-  if (userSession.role === 'owner' || userSession.role === 'business') {
+  if (
+    ['owner', 'business', 'manufacturer', 'dealer', 'repairer', 'importer'].includes(
+      userSession.role as string
+    )
+  ) {
     return (
       <div className="min-h-screen bg-linear-to-b from-[#f0f4f9] via-[#f7f9ff] to-[#edf3fa]">
         <OwnerDashboard
