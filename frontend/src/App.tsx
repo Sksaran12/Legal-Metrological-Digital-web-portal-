@@ -274,6 +274,7 @@ export default function App() {
   const handleLogout = () => {
     void apiClient.logout();
     localStorage.removeItem('everimet_is_authenticated');
+    sessionStorage.removeItem('everimet_access_token');
     localStorage.removeItem('everimet_user_session');
     localStorage.removeItem('everimet_current_view');
     setIsAuthenticated(false);

@@ -45,8 +45,8 @@ async function readApiResponse<T = any>(response: Response): Promise<T> {
 }
 
 function getAuthHeader(): Record<string, string> {
-  const token: string | null = null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const token = sessionStorage.getItem('everimet_access_token');
+  return token ? { Authorization: "Bearer " + token } : {};
 }
 
 export const apiClient = {
@@ -59,6 +59,7 @@ export const apiClient = {
     }));
     const data = await readApiResponse(res);
     if (data.token) {
+      sessionStorage.setItem('everimet_access_token', data.token);
     }
     if (data.userSession) {
       localStorage.setItem('everimet_user_session', JSON.stringify(data.userSession));
@@ -75,6 +76,7 @@ export const apiClient = {
     }));
     const data = await readApiResponse(res);
     if (data.token) {
+      sessionStorage.setItem('everimet_access_token', data.token);
     }
     if (data.userSession) {
       localStorage.setItem('everimet_user_session', JSON.stringify(data.userSession));
@@ -91,7 +93,16 @@ export const apiClient = {
   },
 
   async logout() {
-    await fetchWithCredentials(`${API_BASE}/auth/logout`, withCredentials({ method: 'POST' }));
+    try {
+      await fetchWithCredentials(`${API_BASE}/auth/logout`, withCredentials({
+        method: 'POST',
+        headers: { ...getAuthHeader() }
+      }));
+    } finally {
+      sessionStorage.removeItem('everimet_access_token');
+      localStorage.removeItem('everimet_user_session');
+      localStorage.removeItem('everimet_is_authenticated');
+    }
   },
 
   async createPaymentOrder(applicationId: string) {

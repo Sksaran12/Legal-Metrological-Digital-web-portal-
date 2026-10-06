@@ -191,6 +191,7 @@ export async function register(req: Request, res: Response) {
     return res.status(201).json({
       success: true,
       message: 'Registration completed successfully.',
+      token,
       userSession: {
         id: newUser._id.toString(),
         name: newUser.name,
@@ -307,6 +308,7 @@ export async function login(req: Request, res: Response) {
     return res.status(200).json({
       success: true,
       message: 'Authentication successful.',
+      token,
       userSession: {
         id: user._id.toString(),
         name: user.name,
