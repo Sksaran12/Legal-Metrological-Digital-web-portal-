@@ -360,7 +360,12 @@ export async function createCertificate(req: AuthRequest, res: Response) {
     if (!['officer', 'lmo', 'administrator'].includes(req.user?.role || '')) {
       return res.status(403).json({ success: false, message: 'Only authorized verification officers can issue certificates.' });
     }
-    if (req.user?.role !== 'administrator' && application.assignedLmoUser?.toString() !== req.user?.id) {
+    const assignedLmoId = application.assignedLmoUser?.toString?.();
+    const assignedLegacyId = application.assignedLmo?.id || application.assignedLmo?.badgeNo;
+    if (req.user?.role !== 'administrator' &&
+        assignedLmoId !== req.user?.id &&
+        assignedLegacyId !== req.user?.id &&
+        assignedLegacyId !== req.user?.identifier) {
       return res.status(403).json({ success: false, message: 'You are not assigned to this application.' });
     }
     if (!['UNDER VERIFICATION', 'VERIFIED', 'CERTIFICATE ISSUED'].includes(application.status)) {
@@ -423,15 +428,24 @@ export async function updateCertificateStatus(req: AuthRequest, res: Response) {
     const { certificateId } = req.params;
     const { status } = req.body;
 
-    const cert = await Certificate.findOneAndUpdate(
-      { certificateId },
-      { status },
-      { new: true }
-    );
+    const cert: any = await Certificate.findOne({ certificateId }).populate('applicationRef');
 
     if (!cert) {
       return res.status(404).json({ success: false, message: 'Certificate not found.' });
     }
+    if (!req.user || !['administrator', 'officer', 'lmo'].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'You are not authorized to update certificate status.' });
+    }
+    if (req.user.role !== 'administrator') {
+      const app = cert.applicationRef;
+      const assignedId = app?.assignedLmoUser?._id?.toString?.() || app?.assignedLmoUser?.toString?.();
+      const assignedLegacyId = app?.assignedLmo?.id || app?.assignedLmo?.badgeNo;
+      if (assignedId !== req.user.id && assignedLegacyId !== req.user.id && assignedLegacyId !== req.user.identifier) {
+        return res.status(403).json({ success: false, message: 'You are not assigned to this certificate.' });
+      }
+    }
+    cert.status = status;
+    await cert.save();
 
     return res.status(200).json({
       success: true,

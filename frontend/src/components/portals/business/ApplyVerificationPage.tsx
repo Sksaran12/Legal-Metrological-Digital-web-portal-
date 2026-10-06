@@ -221,6 +221,7 @@ export const ApplyVerificationPage: React.FC<ApplyVerificationPageProps> = ({
 
   // Razorpay Modal state
   const [isRazorpayModalOpen, setIsRazorpayModalOpen] = useState(false);
+  const [pendingApplicationId, setPendingApplicationId] = useState('');
   const [pendingDocketId, setPendingDocketId] = useState('');
 
   // Submission result payload for Full-Page Green Success Screen
@@ -448,7 +449,7 @@ export const ApplyVerificationPage: React.FC<ApplyVerificationPageProps> = ({
   };
 
   // Step 1 -> Trigger Razorpay Payment Modal
-  const handleOpenRazorpayPayment = (e: React.FormEvent) => {
+  const handleOpenRazorpayPayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate that each instrument has required values
@@ -482,6 +483,39 @@ export const ApplyVerificationPage: React.FC<ApplyVerificationPageProps> = ({
     }
 
     const generatedDocket = `APP-2026-IND-${Math.floor(2000 + Math.random() * 7000)}`;
+    const firstInst = instruments[0];
+    try {
+      const draft = await apiClient.createApplication({
+        appNo: generatedDocket,
+        enterpriseName: userSession?.enterpriseName || `${userSession?.name || 'Registered'} Enterprise`,
+        enterpriseType: 'Trader / Importer',
+        equipmentName: `${firstInst.manufacturer} ${firstInst.model}`.trim() || firstInst.instrumentType,
+        equipmentSerial: instruments.map((it) => `${it.serialNumber} (x${it.quantity})`).join(', '),
+        equipmentClass: firstInst.accuracyClass,
+        instrumentType: firstInst.instrumentType,
+        manufacturer: firstInst.manufacturer,
+        model: firstInst.model,
+        capacity: firstInst.capacity,
+        verificationType,
+        installationAddress: installationAddress.trim(),
+        gpsCoordinates: gpsCoordinates.trim(),
+        jurisdiction: 'Mumbai Metropolitan Region',
+        zone: 'Zone II',
+        feeAmount: formatINR(calculationSummary.grandTotal),
+        paymentStatus: 'Pending',
+        instrumentsList: instruments,
+        totalInstrumentsCount: calculationSummary.totalUnitsCount,
+        baseFeeTotal: calculationSummary.baseFeeTotal,
+        stampingFeeTotal: calculationSummary.stampingFeeTotal,
+        gstAmount: calculationSummary.gstAmount,
+        grandTotal: calculationSummary.grandTotal
+      } as any);
+      setPendingApplicationId(String(draft.data?._id || draft.data?.id || ''));
+      if (!draft.data?._id && !draft.data?.id) throw new Error('The application draft could not be created.');
+    } catch (error) {
+      showToast('Application Not Started', error instanceof Error ? error.message : 'Unable to create application.', 'error');
+      return;
+    }
     setPendingDocketId(generatedDocket);
     setIsRazorpayModalOpen(true);
   };
@@ -544,6 +578,9 @@ export const ApplyVerificationPage: React.FC<ApplyVerificationPageProps> = ({
     };
 
     try {
+      if (!pendingApplicationId) throw new Error('The application draft is missing.');
+      /* The server-bound payment verification has already marked this draft Paid. */
+      /*
       const res = await apiClient.createApplication({
         appNo: docketId,
         enterpriseName: userSession?.enterpriseName || (userSession?.name ? `${userSession.name} Enterprise` : 'Apex Scale Solutions'),
@@ -590,9 +627,8 @@ export const ApplyVerificationPage: React.FC<ApplyVerificationPageProps> = ({
         grandTotal: calculationSummary.grandTotal
       } as any);
 
-      if (!res?.success || !res.data) {
-        throw new Error(res?.message || 'The application was not saved by the backend.');
-      }
+      if (!res?.success || !res.data) throw new Error(res?.message || 'The application was not saved by the backend.');
+      */
     } catch (err) {
       const message = err instanceof Error ? err.message : 'The application could not be saved.';
       if (showToast) {
@@ -1593,6 +1629,7 @@ TOTAL STATUTORY AMOUNT PAID (INR)               : ${formatINR(calculationSummary
         applicantEmail={userSession?.identifier || 'owner@domain.in'}
         applicantPhone={userSession?.phone || '+91 98201 44892'}
         docketId={pendingDocketId || `APP-2026-IND-${Math.floor(2000 + Math.random() * 7000)}`}
+        applicationId={pendingApplicationId}
         instrumentsCount={calculationSummary.totalUnitsCount}
         breakdown={{
           baseFee: calculationSummary.baseFeeTotal,

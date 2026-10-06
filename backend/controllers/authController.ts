@@ -17,7 +17,7 @@ function setAuthCookie(res: Response, token: string, maxAge: number) {
   const config = getAppConfig();
   res.setHeader(
     'Set-Cookie',
-    `everimet_auth=${encodeURIComponent(token)}; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=None${config.isProduction ? '; Secure' : ''}`
+    `everimet_auth=${encodeURIComponent(token)}; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=Lax${config.isProduction ? '; Secure' : ''}`
   );
 }
 
@@ -39,9 +39,7 @@ export async function register(req: Request, res: Response) {
       'dealer',
       'repairer',
       'importer',
-      'citizen',
-      'administrator',
-      'officer'
+      'citizen'
     ];
     if (!selfRegisterableRoles.includes(role as UserRole)) {
       return res.status(403).json({
@@ -287,10 +285,9 @@ export async function login(req: Request, res: Response) {
       }
     }
 
-    // Normalized active role
-    let activeRole = (role || user.role) as UserRole;
-    if (activeRole === ('admin' as any)) activeRole = 'administrator';
-    if (user.role === ('admin' as any)) activeRole = 'administrator';
+    // The database is authoritative. The login form may select a portal, but
+    // it must never be able to mint a token with a different role.
+    const activeRole = (user.role === ('admin' as any) ? 'administrator' : user.role) as UserRole;
 
     const token = jwt.sign(
       {
@@ -337,7 +334,7 @@ export function logout(_req: Request, res: Response) {
   const config = getAppConfig();
   res.setHeader(
     'Set-Cookie',
-    `everimet_auth=; Max-Age=0; Path=/; HttpOnly; SameSite=None${config.isProduction ? '; Secure' : ''}`
+    `everimet_auth=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax${config.isProduction ? '; Secure' : ''}`
   );
   return res.status(204).send();
 }

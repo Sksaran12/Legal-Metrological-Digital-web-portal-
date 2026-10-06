@@ -31,7 +31,9 @@ export function getAppConfig() {
     razorpayKeyId: process.env.RAZORPAY_KEY_ID?.trim(),
     razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET?.trim(),
     razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET?.trim(),
-    allowDemoPayments: !isProduction && process.env.ALLOW_DEMO_PAYMENTS === 'true',
+    allowDemoPayments:
+      process.env.ALLOW_DEMO_PAYMENTS === 'true' &&
+      (!isProduction || process.env.DEMO_PAYMENT_CONFIRMATION === 'I_UNDERSTAND_DEMO_PAYMENTS'),
     certificatePrivateKey: process.env.CERTIFICATE_PRIVATE_KEY
       ? Buffer.from(process.env.CERTIFICATE_PRIVATE_KEY, 'base64').toString('utf8')
       : undefined,

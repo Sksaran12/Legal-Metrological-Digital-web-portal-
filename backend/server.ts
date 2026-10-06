@@ -14,6 +14,7 @@ import { seedDatabase } from "./utils/seedDatabase";
 import { errorHandler } from "./middleware/errorHandler";
 import { generalRateLimiter } from "./middleware/rateLimiter";
 import { getAppConfig } from "./config/env";
+import { validateCookieRequestOrigin } from "./middleware/csrf";
 
 // API Routes
 import authRoutes from "./routes/authRoutes";
@@ -102,6 +103,7 @@ async function startServer() {
     }
   }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+  app.use(validateCookieRequestOrigin);
 
   // General rate limiter for API endpoints
   app.use("/api", generalRateLimiter);

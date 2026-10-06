@@ -94,11 +94,11 @@ export const apiClient = {
     await fetchWithCredentials(`${API_BASE}/auth/logout`, withCredentials({ method: 'POST' }));
   },
 
-  async createPaymentOrder(amount: number, receipt: string) {
+  async createPaymentOrder(applicationId: string) {
     const res = await fetchWithCredentials(`${API_BASE}/payments/orders`, withCredentials({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ amount, receipt })
+      body: JSON.stringify({ applicationId })
     }));
     const result = await res.json();
     if (!res.ok) throw new Error(result.message || 'Unable to create payment order.');

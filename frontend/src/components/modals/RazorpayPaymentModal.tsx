@@ -49,6 +49,7 @@ interface RazorpayPaymentModalProps {
   applicantEmail: string;
   applicantPhone: string;
   docketId: string;
+  applicationId: string;
   instrumentsCount: number;
   breakdown: {
     baseFee: number;
@@ -124,6 +125,7 @@ export const RazorpayPaymentModal: React.FC<RazorpayPaymentModalProps> = ({
   applicantEmail,
   applicantPhone,
   docketId,
+  applicationId,
   instrumentsCount,
   breakdown
 }) => {
@@ -184,8 +186,30 @@ export const RazorpayPaymentModal: React.FC<RazorpayPaymentModalProps> = ({
         });
       }
 
-      const order = await apiClient.createPaymentOrder(amount, docketId);
+      const order = await apiClient.createPaymentOrder(applicationId);
       setOrderId(order.orderId);
+      if (allowDemoPayments && order.keyId === 'demo') {
+        const demoPaymentId = `pay_demo_${Date.now()}`;
+        setProcessingMessage('Completing configured server-side demo payment...');
+        await apiClient.verifyPayment({
+          razorpay_order_id: order.orderId,
+          razorpay_payment_id: demoPaymentId,
+          razorpay_signature: 'demo',
+          applicationId
+        });
+        playPaymentSuccessSound();
+        setPaymentStatus('success');
+        onSuccess({
+          razorpayPaymentId: demoPaymentId,
+          razorpayOrderId: order.orderId,
+          razorpaySignature: 'demo',
+          paymentMethod: method,
+          paidAmount: amount,
+          paidFeeFormatted: formattedAmount,
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
       if (!window.Razorpay) throw new Error('Razorpay Checkout is unavailable.');
       const checkout = new window.Razorpay({
         key: order.keyId,
@@ -201,7 +225,8 @@ export const RazorpayPaymentModal: React.FC<RazorpayPaymentModalProps> = ({
           await apiClient.verifyPayment({
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature
+            razorpay_signature: response.razorpay_signature,
+            applicationId
           });
           playPaymentSuccessSound();
           setPaymentStatus('success');

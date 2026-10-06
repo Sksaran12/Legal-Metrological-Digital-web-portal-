@@ -211,9 +211,9 @@ export async function createApplication(req: AuthRequest, res: Response) {
     const now = new Date();
     const config = getAppConfig();
 
-    // Payment state is server-controlled. A browser-submitted "Paid" value
-    // is accepted only when explicitly enabling development demo payments.
-    if (data.paymentStatus === 'Paid' && !config.allowDemoPayments) {
+    // Payment state is always server-controlled. Demo mode only changes how a
+    // server-created payment is completed; it never makes browser input valid.
+    if (data.paymentStatus === 'Paid') {
       const paymentId = String(data.razorpayPaymentId || data.txnId || '');
       const payment = paymentId && req.user?.id
         ? await Payment.findOne({ paymentId, owner: req.user.id, status: 'verified' })
