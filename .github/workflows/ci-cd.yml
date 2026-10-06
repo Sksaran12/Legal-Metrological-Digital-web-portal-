@@ -22,7 +22,10 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci
+        # npm ci currently fails on GitHub's Linux runner because npm omits
+        # platform-specific optional dependency entries from this lockfile.
+        # npm install still honors package-lock.json while resolving them.
+        run: npm install --no-audit --no-fund
 
       - name: Verify TypeScript Type Safety
         run: npx tsc --noEmit
